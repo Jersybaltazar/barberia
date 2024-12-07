@@ -12,8 +12,8 @@
             <th>Servicio</th>
             <th>Cliente</th>
             <th>Estado</th>
-            <th>Productos</th>
-            <th>Acciones</th>
+
+            <th v-if="isAdmin">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -26,10 +26,7 @@
             <td>
               <span :class="['status', reserva.estado.toLowerCase()]">{{ reserva.estado }}</span>
             </td>
-            <td>
-              <input type="checkbox" v-model="reserva.incluirProductos" /> Agregar Productos
-            </td>
-            <td>
+            <td v-if="isAdmin">
               <div class="actions">
                 <button class="action-button success" @click="finalizeReservation(reserva.id_reserva)">
                   Reserva Concretada
@@ -50,7 +47,7 @@
           <p><strong>Servicio:</strong> {{ selectedReserva.servicio }} - {{ selectedReserva.servicioPrecio | currency }}
           </p>
 
-          <div v-if="selectedReserva.incluirProductos">
+          <div v-if="selectedReserva.incluirProductos && isAdmin">
             <h3>Selecciona productos adicionales:</h3>
             <div v-for="(product, index) in products" :key="index" class="product-selection">
               <input type="checkbox" :value="product.price" v-model="selectedProducts" />
@@ -58,8 +55,8 @@
             </div>
           </div>
 
-          <p v-if="selectedReserva.incluirProductos"><strong>Total Productos:</strong> {{ productsTotal | currency }}
-          </p>
+          <p v-if="selectedReserva.incluirProductos && isAdmin"><strong>Total Productos:</strong> {{ productsTotal |
+            currency }}</p>
           <p><strong>Total:</strong> {{ totalReserva | currency }}</p>
 
           <button class="confirm-button" @click="finalizeReservation">Reserva Concretada</button>
@@ -70,8 +67,9 @@
   </div>
 </template>
 
+
 <script lang="ts">
-import { defineComponent, ref, computed } from 'vue';
+import { defineComponent, ref, computed, onMounted } from 'vue';
 import Navbar from '../components/Navbar.vue';
 import axios from "axios";
 export default defineComponent({
@@ -81,7 +79,8 @@ export default defineComponent({
   },
   setup() {
     const reservas = ref([]);
-
+    const isAdmin = ref(false);
+    const user = ref<any>({});
     const products = [
       { name: 'Gel de Peinado', price: 15 },
       { name: 'Crema para Afeitar', price: 10 },
@@ -93,7 +92,24 @@ export default defineComponent({
     const showModal = ref(false);
     const selectedReserva = ref<any>({});
     const selectedProducts = ref<number[]>([]);
+    
+    const fetchUser = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
+      try {
+        const response = await axios.get("http://localhost:3000/auth/user", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        const usuario = response.data.user;
+        user.value = usuario;
+        isAdmin.value = (usuario.rol === "ADMIN");  // Asignamos isAdmin según el rol
+      } catch (error) {
+        console.error("Error al obtener el usuario:", error);
+      }
+    };
     const cargarReservas = async () => {
       try {
         const response = await axios.get("http://localhost:3000/reservas");
@@ -106,7 +122,7 @@ export default defineComponent({
           estado: reserva.estado,
           incluirProductos: false,
         }));
-        console.log(reservas.value); 
+        console.log(reservas.value);
       } catch (error) {
         console.error("Error al cargar reservas:", error);
         alert("No se pudieron cargar las reservas.");
@@ -139,9 +155,9 @@ export default defineComponent({
 
       try {
         await axios.put(`http://localhost:3000/reservas/${id_reserva}`, {
-          estado: "COMPLETADA",
+          estado: "ACEPTADO",
         });
-        alert(`Reserva ${id_reserva} marcada como COMPLETADA.`);
+        alert(`Reserva ${id_reserva} marcada como ACEPTADO.`);
         cargarReservas();
       } catch (error) {
         console.error("Error al completar la reserva:", error);
@@ -157,7 +173,7 @@ export default defineComponent({
       }
       try {
         await axios.put(`http://localhost:3000/reservas/${id_reserva}`, {
-          estado: "CANCELADA",
+          estado: "CANCELADO",
         });
         alert(`Reserva ${id_reserva} cancelada.`);
         cargarReservas();
@@ -166,7 +182,10 @@ export default defineComponent({
         alert("No se pudo cancelar la reserva.");
       }
     };
-    cargarReservas();
+    onMounted(async () => {
+      await fetchUser();      // Primero obtenemos el usuario y el rol
+      await cargarReservas(); // Luego cargamos las reservas
+    });
     return {
       reservas,
       products,
@@ -179,6 +198,8 @@ export default defineComponent({
       totalReserva,
       finalizeReservation,
       cancelReservation,
+      isAdmin,
+      user
     };
   },
   filters: {
@@ -196,6 +217,12 @@ export default defineComponent({
 .reservations-page {
   padding: 2rem;
   text-align: center;
+}
+.status.aceptado {
+  background-color: #4caf50; /* Verde */
+}
+.status.cancelado {
+  background-color: #f44336; /* Rojo */
 }
 
 .reservations-table {

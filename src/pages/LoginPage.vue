@@ -6,14 +6,29 @@
       <form @submit.prevent="handleLogin">
         <div class="form-group">
           <label for="email">Correo Electrónico</label>
-          <input type="email" id="email" v-model="email" placeholder="Ingresa tu correo electrónico" required />
+          <input
+            type="email"
+            id="email"
+            v-model="email"
+            placeholder="Ingresa tu correo electrónico"
+            required
+          />
         </div>
         <div class="form-group">
           <label for="password">Contraseña</label>
           <div class="password-wrapper">
-            <input :type="showPassword ? 'text' : 'password'" id="password" v-model="password"
-              placeholder="Ingresa tu contraseña" required />
-            <button type="button" class="toggle-password" @click="togglePasswordVisibility">
+            <input
+              :type="showPassword ? 'text' : 'password'"
+              id="password"
+              v-model="password"
+              placeholder="Ingresa tu contraseña"
+              required
+            />
+            <button
+              type="button"
+              class="toggle-password"
+              @click="togglePasswordVisibility"
+            >
               <font-awesome-icon :icon="showPassword ? 'eye-slash' : 'eye'" />
             </button>
           </div>
@@ -28,53 +43,53 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import FontAwesomeIcon from '../fontawesome';
-import axios from 'axios';
+import { defineComponent, ref } from "vue";
+import { useRouter } from "vue-router";
+import FontAwesomeIcon from "../fontawesome";
+import axios from "axios";
+
 export default defineComponent({
-  name: 'LoginPage',
+  name: "LoginPage",
   components: {
     FontAwesomeIcon,
   },
   setup() {
-    const email = ref<string>('');
-    const password = ref<string>('');
+    const email = ref<string>("");
+    const password = ref<string>("");
     const showPassword = ref<boolean>(false);
     const router = useRouter();
 
     const handleLogin = async () => {
       if (!email.value || !password.value) {
-        alert('Por favor, completa todos los campos.');
+        alert("Por favor, completa todos los campos.");
         return;
       }
 
       try {
-        const response = await axios.post('http://localhost:3000/login', {
+        const response = await axios.post("http://localhost:3000/login", {
           email: email.value,
           password: password.value,
         });
 
         const { token, user } = response.data;
 
-        // Guardar token en localStorage o cookies
-        localStorage.setItem('token', token);
+        // Guardar el token en localStorage
+        localStorage.setItem("token", token);
 
-        // Guardar el ID dependiendo del rol
-        if (user.rol === 'CLIENTE' && user.id_cliente) {
-          localStorage.setItem('id_cliente', user.id_cliente);
-        } else if (user.rol === 'BARBERO' && user.id_barbero) {
-          localStorage.setItem('id_barbero', user.id_barbero);
-        }else {
-      throw new Error('Rol no válido o datos incompletos.');
-    }
-
-
-        router.push('/home')
-      } catch (error) {
-        console.error('Error al iniciar sesión:', error);
+        // Guardar información adicional según el rol del usuario
+        if (user.rol === "CLIENTE") {
+          localStorage.setItem("id_cliente", user.id_cliente);
+          router.push("/home"); // Redirigir a la página principal de clientes
+        } else if (user.rol === "ADMIN") {
+          router.push("/home"); // Redirigir al panel administrativo
+        } else {
+          throw new Error("Rol no válido o datos incompletos.");
+        }
+      } catch (error:any) {
+        console.error("Error al iniciar sesión:", error);
         alert(
-          error.response?.data?.message || 'Error al iniciar sesión. Inténtalo de nuevo.'
+          error.response?.data?.message ||
+            "Error al iniciar sesión. Inténtalo de nuevo."
         );
       }
     };
@@ -93,8 +108,6 @@ export default defineComponent({
   },
 });
 </script>
-
-
 <style scoped>
 .login-container {
   display: flex;

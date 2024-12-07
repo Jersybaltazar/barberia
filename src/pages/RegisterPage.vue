@@ -18,16 +18,7 @@
             </button>
           </div>
         </div>
-        <div class="form-group">
-          <label for="rol">Tipo de Usuario</label>
-          <select id="rol" v-model="rol" required>
-            <option value="CLIENTE">Cliente</option>
-            <option value="BARBERO">Barbero</option>
-          </select>
-        </div>
-
-        <!-- Campos específicos para CLIENTE -->
-        <div v-if="rol === 'CLIENTE'" class="grid-container">
+        <div class="grid-container">
           <div class="form-group">
             <label for="nombre">Nombre</label>
             <input type="text" id="nombre" v-model="cliente.nombre" placeholder="Ingresa tu nombre" required />
@@ -45,32 +36,6 @@
             <input type="text" id="direccion" v-model="cliente.direccion" placeholder="Ingresa tu dirección" />
           </div>
         </div>
-
-        <!-- Campos específicos para BARBERO -->
-        <div v-if="rol === 'BARBERO'" class="grid-container">
-          <div class="form-group">
-            <label for="nombre">Nombre</label>
-            <input type="text" id="nombre" v-model="barbero.nombre" placeholder="Ingresa tu nombre" required />
-          </div>
-          <div class="form-group">
-            <label for="apellido">Apellido</label>
-            <input type="text" id="apellido" v-model="barbero.apellido" placeholder="Ingresa tu apellido" required />
-          </div>
-          <div class="form-group">
-            <label for="telefono">Teléfono</label>
-            <input type="tel" id="telefono" v-model="barbero.telefono" placeholder="Ingresa tu teléfono" required />
-          </div>
-          <div class="form-group">
-            <label for="especialidad">Especialidad</label>
-            <input type="text" id="especialidad" v-model="barbero.especialidad" placeholder="Ingresa tu especialidad" />
-          </div>
-          <div class="form-group">
-            <label for="horario">Disponibilidad</label>
-            <input type="text" id="horario" v-model="barbero.horario"
-              placeholder="Ingresa tu disponibilidad" />
-          </div> <!-- Cerré correctamente este div -->
-        </div>
-
         <button type="submit" class="register-button">Crear Cuenta</button>
       </form>
       <p class="login-link">
@@ -81,54 +46,49 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
-import FontAwesomeIcon from '../fontawesome';
-import axios from 'axios';
+import { defineComponent, ref } from "vue";
+import FontAwesomeIcon from "../fontawesome";
+import axios from "axios";
+
 export default defineComponent({
-  name: 'RegisterPage',
+  name: "RegisterPage",
   components: {
     FontAwesomeIcon,
   },
   setup() {
-    const email = ref<string>('');
-    const password = ref<string>('');
+    const email = ref<string>("");
+    const password = ref<string>("");
     const showPassword = ref<boolean>(false);
-    const rol = ref<string>('CLIENTE'); // Por defecto, seleccionado como "CLIENTE"
     const cliente = ref({
-      nombre: '',
-      apellido: '',
-      telefono: '',
-      direccion: '',
+      nombre: "",
+      apellido: "",
+      telefono: "",
+      direccion: "",
     });
-    const barbero = ref({
-      nombre: '',
-      apellido: '',
-      telefono: '',
-      especialidad: '',
-      horario: '',
-    });
-
-
 
     const handleRegister = async () => {
       try {
         const data = {
           email: email.value,
           password: password.value,
-          rol: rol.value,
-          cliente: rol.value === 'CLIENTE' ? cliente.value : null,
-          barbero: rol.value === 'BARBERO' ? barbero.value : null,
+          cliente: cliente.value,
         };
 
-        const response = await axios.post('http://localhost:3000/register', data);
+        const response = await axios.post("http://localhost:3000/register", data);
         console.log(response.data.message);
-        alert('Usuario registrado exitosamente');
+        alert("Usuario registrado exitosamente");
+        email.value = "";
+        password.value = "";
+        cliente.value = {
+          nombre: "",
+          apellido: "",
+          telefono: "",
+          direccion: "",
+        };
       } catch (error) {
-        console.error(error.response.data.message || 'Error al registrar usuario');
-        alert('Error al registrar usuario');
+        alert("Error al registrar usuario");
       }
     };
-
 
     const togglePasswordVisibility = () => {
       showPassword.value = !showPassword.value;
@@ -138,9 +98,7 @@ export default defineComponent({
       email,
       password,
       showPassword,
-      rol,
       cliente,
-      barbero,
       handleRegister,
       togglePasswordVisibility,
     };

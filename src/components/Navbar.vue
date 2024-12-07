@@ -11,12 +11,20 @@
                     <li><router-link to="/productos">Productos</router-link></li>
                     <li><router-link to="/servicios">Servicios</router-link></li>
                     <li><router-link to="/reservas">Reservas</router-link></li>
+                    <li><router-link to="/ordenes">Ordenes</router-link></li>
                 </ul>
             </nav>
             
             <!-- User Info and Logout Button -->
             <div class="user-info" v-if="isLoggedIn">
-                <router-link to="/perfil" class="user-name">{{ userName }} ({{ userRole }})</router-link>
+                <!-- Mostrar nombre para CLIENTE -->
+                <router-link v-if="user.rol === 'CLIENTE'" to="/perfil" class="user-name">
+                    {{ user.cliente.nombre }} {{ user.cliente.apellido }} ({{ user.rol }})
+                </router-link>
+                <!-- Mostrar solo el rol para ADMIN -->
+                <span v-else class="user-name">
+                    ({{ user.rol }})
+                </span>
                 <button @click="logout" class="logout-button">Cerrar sesión</button>
             </div>
             
@@ -30,29 +38,55 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, onMounted } from 'vue';
+import axios from 'axios';
 
 export default defineComponent({
     name: "Navbar",
     setup() {
-        // Estado de inicio de sesión del usuario
-        const isLoggedIn = ref(true);
-        
-        // Datos del usuario (estos deberían obtenerse de un backend o un estado global en una aplicación real)
-        const userName = ref("Juan Pérez");
-        const userRole = ref("CLIENTE"); // Puede ser "CLIENTE" o "BARBERO"
-        
-        // Función de cierre de sesión
-        const logout = () => {
-            console.log("Cerrando sesión...");
-            isLoggedIn.value = false;
-            // Aquí se puede agregar la lógica de cierre de sesión real
+        const isLoggedIn = ref(false);
+        const user = ref({
+            cliente: null, // Cambia a null por defecto para manejar ambos casos
+            email: "",
+            rol: "",
+        });
+
+        const fetchUser = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                if (!token) return;
+
+                const response = await axios.get("http://localhost:3000/auth/user", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                // Actualiza el objeto `user` con los datos del backend
+                user.value = response.data.user;
+                isLoggedIn.value = true;
+            } catch (error) {
+                console.error("Error al obtener el usuario:", error);
+                isLoggedIn.value = false;
+            }
         };
+        
+        const logout = () => {
+            localStorage.removeItem("token");
+            isLoggedIn.value = false;
+            user.value = {
+                cliente: null,
+                email: "",
+                rol: "",
+            };
+            location.reload();
+        };
+
+        onMounted(fetchUser);
 
         return {
             isLoggedIn,
-            userName,
-            userRole,
+            user,
             logout,
         };
     },

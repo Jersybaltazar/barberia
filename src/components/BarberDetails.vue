@@ -1,36 +1,30 @@
 <template>
     <div class="barber-details">
-        <h2>{{ selectedBarber.name }}</h2>
-        <p><strong>Ubicación:</strong> {{ selectedBarber.location }}</p>
-        <p><strong>Calificación:</strong> {{ selectedBarber.rating }} ★</p>
-        
+        <h2>{{ selectedBarber.nombre }} {{ selectedBarber.apellido }}</h2>
         <h3>Servicios Disponibles</h3>
         <ul>
             <li v-for="(service, index) in selectedBarber.services" :key="index">
-                <input 
-                    type="checkbox" 
-                    :value="service" 
-                    v-model="selectedServices" 
-                    id="service-{{ index }}"
-                />
+                <input type="checkbox" :value="service" v-model="selectedServices" id="service-{{ index }}" />
                 <label :for="'service-' + index">
-                    {{ service.name }} - {{ service.price | currency }}
+                    {{ service.nombre }} - {{ service.precio | currency }}
                 </label>
             </li>
         </ul>
-        
+        <p v-if="!selectedBarber.services || !selectedBarber.services.length">
+            No hay servicios disponibles para este barbero.
+        </p>
         <button @click="proceedToReservation" class="reserve-button" :disabled="!selectedServices.length">
-            Reservar {{ selectedBarber.name }}
+            Reservar {{ selectedBarber.nombre }}
         </button>
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { defineComponent, ref } from "vue";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
-    name: 'BarberDetails',
+    name: "BarberDetails",
     props: {
         selectedBarber: {
             type: Object,
@@ -44,11 +38,14 @@ export default defineComponent({
         const proceedToReservation = () => {
             if (selectedServices.value.length > 0) {
                 router.push({
-                    name: 'DateAndTimeSelection',
-                    query: { barber: JSON.stringify(props.selectedBarber) },
+                    name: "DateAndTimeSelection",
+                    query: {
+                        barber: JSON.stringify(props.selectedBarber),
+                        services: JSON.stringify(selectedServices.value),
+                    },
                 });
             } else {
-                alert('Por favor selecciona al menos un servicio para continuar.');
+                alert("Por favor selecciona al menos un servicio para continuar.");
             }
         };
 
@@ -58,10 +55,10 @@ export default defineComponent({
         };
     },
     filters: {
-        currency(value) {
-            return new Intl.NumberFormat('es-ES', {
-                style: 'currency',
-                currency: 'PEN',
+        currency(value: any) {
+            return new Intl.NumberFormat("es-PE", {
+                style: "currency",
+                currency: "PEN",
             }).format(value);
         },
     },
